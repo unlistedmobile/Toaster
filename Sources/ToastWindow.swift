@@ -47,11 +47,18 @@ open class ToastWindow: UIWindow {
     self.backgroundColor = .clear
     self.isHidden = false
     self.handleRotate(UIApplication.shared.statusBarOrientation)
+    self.bringWindowToTop()
 
     NotificationCenter.default.addObserver(
       self,
       selector: #selector(self.bringWindowToTop),
       name: .UIWindowDidBecomeVisible,
+      object: nil
+    )
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(self.bringWindowToTop),
+      name: .UIKeyboardWillShow,
       object: nil
     )
     NotificationCenter.default.addObserver(
@@ -74,15 +81,23 @@ open class ToastWindow: UIWindow {
     )
   }
 
+  @objc func foo(_ notification: Notification) {
+    UIApplication.shared.windows.last?.addSubview(self)
+  }
+
   required public init?(coder aDecoder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
   /// Bring ToastWindow to top when another window is being shown.
-  @objc func bringWindowToTop(_ notification: Notification) {
-    if !(notification.object is ToastWindow) {
-      ToastWindow.shared.isHidden = true
-      ToastWindow.shared.isHidden = false
+  @objc func bringWindowToTop(_ notification: Notification? = nil) {
+    if notification?.object as? ToastWindow !== self {
+      self.isHidden = true
+      self.isHidden = false
+    }
+
+    if #available(iOS 11, *), let keyboardWindow = UIApplication.shared.windows.last, NSStringFromClass(type(of: keyboardWindow)) == "UIRemoteKeyboardWindow" {
+      keyboardWindow.addSubview(self)
     }
   }
 
